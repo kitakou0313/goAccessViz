@@ -10,6 +10,11 @@
 		"ghcr.io/devcontainers/features/git:1": {},
 		// "ghcr.io/meaningful-ooo/devcontainer-features/fish:2": {},
 		"ghcr.io/duduribeiro/devcontainer-features/tmux:1": {}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": ["saoudrizwan.claude-dev"]
+		}
 	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
