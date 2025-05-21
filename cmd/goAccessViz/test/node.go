@@ -3,7 +3,8 @@ package test
 import "testing"
 
 func TestGetChildren(t *testing.T) {
-	node := &Node{}
+	testChildren := []FunctionNode{}
+	node := NewFunctionNode("doTestFunction")
 	actual := node.GetChildren()
 
 	expected := []Node{}
