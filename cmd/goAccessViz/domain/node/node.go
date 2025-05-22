@@ -1,4 +1,4 @@
-package domain
+package node
 
 type Node interface {
 	GetChildren() []Node

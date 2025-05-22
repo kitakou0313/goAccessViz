@@ -1,11 +1,14 @@
-package test
+package node
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestGetChildren(t *testing.T) {
-	testChildren := []FunctionNode{}
-	node := NewFunctionNode("doTestFunction")
-	actual := node.GetChildren()
+	testChildren := []nod.FunctionNode{}
+	testChildren := FunctionNode.Ne
+	nodeInstance := domain.NewFunctionNode("doTestFunction")
+	actual := nodeInstance.GetChildren()
 
 	expected := []Node{}
 

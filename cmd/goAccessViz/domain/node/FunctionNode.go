@@ -1,4 +1,4 @@
-package domain
+package node
 
 // 関数に相当するNode
 type FunctionNode struct {
