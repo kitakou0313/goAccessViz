@@ -5,12 +5,14 @@ import (
 )
 
 func TestGetChildren(t *testing.T) {
-	testChildren := []nod.FunctionNode{}
-	testChildren := FunctionNode.Ne
-	nodeInstance := domain.NewFunctionNode("doTestFunction")
+	testChildren := []Node{
+		NewFunctionNode("testFunction1", []Node{}),
+		NewFunctionNode("testFunction2", []Node{}),
+	}
+	nodeInstance := NewFunctionNode("doTestFunction", testChildren)
 	actual := nodeInstance.GetChildren()
 
-	expected := []Node{}
+	expected := testChildren
 
 	for i := 0; i < len(actual); i++ {
 		if actual[i] != expected[i] {
