@@ -4,11 +4,12 @@ import (
 	"testing"
 )
 
-func TestGetChildren(t *testing.T) {
-	testChildren := []Node{
-		NewFunctionNode("testFunction1", []Node{}),
-		NewFunctionNode("testFunction2", []Node{}),
-	}
+var testChildren = []Node{
+	NewFunctionNode("testFunction1", []Node{}),
+	NewFunctionNode("testFunction2", []Node{}),
+}
+
+func TestFunctionNodeGetChildren(t *testing.T) {
 	nodeInstance := NewFunctionNode("doTestFunction", testChildren)
 	actual := nodeInstance.GetChildren()
 
@@ -18,6 +19,15 @@ func TestGetChildren(t *testing.T) {
 		if actual[i] != expected[i] {
 			t.Errorf("Expected %v, but got %v", expected[i], actual[i])
 		}
+	}
+
+}
+
+func TestNetFunctionNode(t *testing.T) {
+	expectedName := "testFunction"
+	functionNode := NewFunctionNode(expectedName, testChildren)
+	if functionNode.funtionName != "testFunction" {
+		t.Errorf("Expected function name '%s', but got '%s'", expectedName, functionNode.funtionName)
 	}
 
 }
