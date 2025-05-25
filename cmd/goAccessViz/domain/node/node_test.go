@@ -31,3 +31,19 @@ func TestNetFunctionNode(t *testing.T) {
 	}
 
 }
+
+func TestDBTableNode(t *testing.T) {
+	expectedName := "test-table"
+
+	dbtableNode := NewDBTableNode(expectedName, testChildren)
+
+	if dbtableNode.tableName != expectedName {
+		t.Errorf("Expected table name '%s', but got '%s'", expectedName, dbtableNode.tableName)
+	}
+
+	for i := 0; i < len(testChildren); i++ {
+		if dbtableNode.children[i] != testChildren[i] {
+			t.Errorf("Expected child %d to be %v, but got %v", i, testChildren[i], dbtableNode.children[i])
+		}
+	}
+}
