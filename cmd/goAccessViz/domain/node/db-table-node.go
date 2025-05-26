@@ -12,3 +12,7 @@ func NewDBTableNode(tableName string, children []Node) *DBTableNode {
 		children:  children,
 	}
 }
+
+func (dbtb *DBTableNode) GetChildren() []Node {
+	return dbtb.children
+}

@@ -15,6 +15,10 @@ func TestFunctionNodeGetChildren(t *testing.T) {
 
 	expected := testChildren
 
+	if len(actual) != len(expected) {
+		t.Errorf("Expected %d children, but got %d", len(expected), len(actual))
+	}
+
 	for i := 0; i < len(actual); i++ {
 		if actual[i] != expected[i] {
 			t.Errorf("Expected %v, but got %v", expected[i], actual[i])
@@ -46,4 +50,22 @@ func TestDBTableNode(t *testing.T) {
 			t.Errorf("Expected child %d to be %v, but got %v", i, testChildren[i], dbtableNode.children[i])
 		}
 	}
+}
+
+func TestDBTableNodeGetChildren(t *testing.T) {
+	dbTableNode := NewDBTableNode("test-table", testChildren)
+	actual := dbTableNode.GetChildren()
+
+	expected := testChildren
+
+	if len(actual) != len(expected) {
+		t.Errorf("Expected %d children, but got %d", len(expected), len(actual))
+	}
+
+	for i := 0; i < len(actual); i++ {
+		if actual[i] != expected[i] {
+			t.Errorf("Expected %v, but got %v", expected[i], actual[i])
+		}
+	}
+
 }
