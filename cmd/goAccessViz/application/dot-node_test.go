@@ -1,6 +1,9 @@
 package application
 
-import "testing"
+import (
+	"goAccessViz/cmd/goAccessViz/domain/node"
+	"testing"
+)
 
 func TestNew(t *testing.T) {}
 
@@ -21,5 +24,14 @@ func TestDOTID(t *testing.T) {
 }
 
 // DotNodeの生成メソッドに対してのテスト
+func TestNewDotNode(t *testing.T) {
+	testNodeName := "testFunction"
+	testNode := node.NewFunctionNode(testNodeName, nil)
+	dotNode := NewDotNode(testNode)
+
+	if dotNode.DOTID() != testNodeName {
+		t.Errorf("Expected DOTID to be '%s', but got '%s'", testNodeName, dotNode.DOTID())
+	}
+}
 
 // node DomainオブジェクトからDotNodeのGraphを生成するメソッドのテスト
