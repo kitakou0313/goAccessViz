@@ -16,3 +16,7 @@ func NewFunctionNode(functionName string, children []Node) *FunctionNode {
 func (fn *FunctionNode) GetChildren() []Node {
 	return fn.children
 }
+
+func (fn *FunctionNode) GetLabel() string {
+	return fn.funtionName
+}
