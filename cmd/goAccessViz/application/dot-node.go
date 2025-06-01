@@ -16,13 +16,14 @@ func (d *dotNode) DOTID() string {
 	return d.label
 }
 
-func newDotNode(node node.Node) *dotNode {
+func newDotNode(node node.Node, goNumDotNode graph.Node) *dotNode {
 	return &dotNode{
 		Node:  nil,
 		label: node.GetLabel(),
 	}
 }
 
-func NewDotGraph(node node.Node) *simple.DirectedGraph {
+func NewDotGraph(rootNode node.Node) *simple.DirectedGraph {
+	g := simple.NewDirectedGraph()
 
 }

@@ -4,6 +4,7 @@ import (
 	"goAccessViz/cmd/goAccessViz/domain/node"
 	"testing"
 
+	"gonum.org/v1/gonum/graph/simple"
 	"gonum.org/v1/gonum/graph/topo"
 )
 
@@ -29,7 +30,11 @@ func TestDOTID(t *testing.T) {
 func TestNewDotNode(t *testing.T) {
 	testNodeName := "testFunction"
 	testNode := node.NewFunctionNode(testNodeName, nil)
-	dotNode := newDotNode(testNode)
+
+	tmpGraph := simple.NewDirectedGraph()
+	tmpGoNumDotNode := tmpGraph.NewNode()
+
+	dotNode := newDotNode(testNode, tmpGoNumDotNode)
 
 	if dotNode.DOTID() != testNodeName {
 		t.Errorf("Expected DOTID to be '%s', but got '%s'", testNodeName, dotNode.DOTID())
