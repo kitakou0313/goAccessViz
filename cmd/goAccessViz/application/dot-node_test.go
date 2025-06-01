@@ -49,17 +49,33 @@ func TestNewDotGraph(t *testing.T) {
 	dotGrapth := NewDotGraph(testRootNode)
 
 	// トポロジカルソートして確認
-	sortedNodeNodes, err := topo.Sort(dotGrapth)
+	sortedDotNodes, err := topo.Sort(dotGrapth)
 	if err != nil {
 		t.Errorf("Failed to sort graph: %v", err)
 	}
 
 	// ルートノードが最初に来ることを確認
-	if testRootNode.GetLabel() != sortedNodeNodes[0].(*dotNode).DOTID() {
-		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode.GetLabel(), sortedNodeNodes[0].(*dotNode).DOTID())
+	if testRootNode.GetLabel() != sortedDotNodes[0].(*dotNode).DOTID() {
+		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode.GetLabel(), sortedDotNodes[0].(*dotNode).DOTID())
 
 	}
 
 	// 子ノードが正しく追加されていることを確認
+	if len(sortedDotNodes)-1 != len(testChildrenNodes) {
+		t.Errorf("Expected %d child nodes, but got %d", len(testChildrenNodes), len(sortedDotNodes)-1)
+	}
 
+	childDomainNodesExistingInDotGraph := make(map[string]bool)
+	for _, childDomainNode := range testChildrenNodes {
+		childDomainNodesExistingInDotGraph[childDomainNode.GetLabel()] = false
+		for _, childDotNode := range sortedDotNodes[1:] {
+			childDomainNodesExistingInDotGraph[childDotNode.(*dotNode).DOTID()] = true
+		}
+	}
+
+	for _, childDomainNode := range testChildrenNodes {
+		if _, ok := childDomainNodesExistingInDotGraph[childDomainNode.GetLabel()]; !ok {
+			t.Errorf("Child node '%s' not found in dot graph", childDomainNode.GetLabel())
+		}
+	}
 }
