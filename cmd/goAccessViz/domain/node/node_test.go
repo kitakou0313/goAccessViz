@@ -30,7 +30,7 @@ func TestFunctionNodeGetChildren(t *testing.T) {
 func TestNetFunctionNode(t *testing.T) {
 	expectedName := "testFunction"
 	functionNode := NewFunctionNode(expectedName, testChildren)
-	if functionNode.funtionName != "testFunction" {
+	if functionNode.GetLabel() != "testFunction" {
 		t.Errorf("Expected function name '%s', but got '%s'", expectedName, functionNode.funtionName)
 	}
 
@@ -41,7 +41,7 @@ func TestDBTableNode(t *testing.T) {
 
 	dbtableNode := NewDBTableNode(expectedName, testChildren)
 
-	if dbtableNode.tableName != expectedName {
+	if dbtableNode.GetLabel() != expectedName {
 		t.Errorf("Expected table name '%s', but got '%s'", expectedName, dbtableNode.tableName)
 	}
 

@@ -16,3 +16,7 @@ func NewDBTableNode(tableName string, children []Node) *DBTableNode {
 func (dbtb *DBTableNode) GetChildren() []Node {
 	return dbtb.children
 }
+
+func (dbtb *DBTableNode) GetLabel() string {
+	return dbtb.tableName
+}
