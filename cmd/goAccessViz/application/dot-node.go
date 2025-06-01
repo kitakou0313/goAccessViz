@@ -4,6 +4,7 @@ import (
 	"goAccessViz/cmd/goAccessViz/domain/node"
 
 	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/simple"
 )
 
 type dotNode struct {
@@ -15,9 +16,13 @@ func (d *dotNode) DOTID() string {
 	return d.label
 }
 
-func NewDotNode(node node.Node) *dotNode {
+func newDotNode(node node.Node) *dotNode {
 	return &dotNode{
 		Node:  nil,
 		label: node.GetLabel(),
 	}
+}
+
+func NewDotGraph(node node.Node) *simple.DirectedGraph {
+
 }
