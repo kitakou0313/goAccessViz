@@ -111,8 +111,8 @@ func TestNewDotGraphWithSome2IncomingEdges(t *testing.T) {
 	}
 
 	// 子ノードが正しく追加されていることを確認
-	if len(sortedDotNodes)-1 != len(testChildrenNodes)+1 {
-		t.Errorf("Expected %d child nodes, but got %d", len(testChildrenNodes)+1, len(sortedDotNodes)-1)
+	if len(sortedDotNodes)-1 != 3 {
+		t.Errorf("Expected %d child nodes, but got %d", 3, len(sortedDotNodes)-1)
 	}
 
 	childDomainNodesExistingInDotGraph := make(map[string]bool)
