@@ -26,19 +26,15 @@ func newDotNode(node node.Node, goNumDotNode graph.Node) *dotNode {
 // ToDo2度同じNodeに達した場合の対応を考える
 func addDomainNodeChildrenToDotGraph(rootNode node.Node, rootDotNode *dotNode, g *simple.DirectedGraph, dotIdToIDMap map[string]*dotNode) {
 	for _, child := range rootNode.GetChildren() {
-		// switch
-		var childDotNode *dotNode
-		if _, ok := dotIdToIDMap[child.GetLabel()]; ok {
-			childDotNode = dotIdToIDMap[child.GetLabel()]
+		label := child.GetLabel()
 
-			g.SetEdge(g.NewEdge(rootDotNode, childDotNode))
-		} else {
+		childDotNode, exists := dotIdToIDMap[label]
+		if !exists {
 			childDotNode = newDotNode(child, g.NewNode())
-
-			g.SetEdge(g.NewEdge(rootDotNode, childDotNode))
-			dotIdToIDMap[child.GetLabel()] = childDotNode
+			dotIdToIDMap[label] = childDotNode
 		}
 
+		g.SetEdge(g.NewEdge(rootDotNode, childDotNode))
 		addDomainNodeChildrenToDotGraph(child, childDotNode, g, dotIdToIDMap)
 	}
 }
