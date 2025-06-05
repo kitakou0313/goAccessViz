@@ -24,26 +24,33 @@ func newDotNode(node node.Node, goNumDotNode graph.Node) *dotNode {
 }
 
 // ToDo2度同じNodeに達した場合の対応を考える
-func addDomainNodeChildrenToDotGraph(rootNode node.Node, rootDotNode *dotNode, g *simple.DirectedGraph, dotIdToIDMap map[string]int64) {
+func addDomainNodeChildrenToDotGraph(rootNode node.Node, rootDotNode *dotNode, g *simple.DirectedGraph, dotIdToIDMap map[string]*dotNode) {
 	for _, child := range rootNode.GetChildren() {
 		// switch
-		if _, ok := dotIdToIDMap[child.GetLabel()]; !ok {
-			childDotNode := newDotNode(child, g.NewNode())
-		}
-		g.SetEdge(g.NewEdge(rootDotNode, childDotNode))
+		var childDotNode *dotNode
+		if _, ok := dotIdToIDMap[child.GetLabel()]; ok {
+			childDotNode = dotIdToIDMap[child.GetLabel()]
 
-		addDomainNodeChildrenToDotGraph(child, childDotNode, g)
+			g.SetEdge(g.NewEdge(rootDotNode, childDotNode))
+		} else {
+			childDotNode = newDotNode(child, g.NewNode())
+
+			g.SetEdge(g.NewEdge(rootDotNode, childDotNode))
+			dotIdToIDMap[child.GetLabel()] = childDotNode
+		}
+
+		addDomainNodeChildrenToDotGraph(child, childDotNode, g, dotIdToIDMap)
 	}
 }
 
 func NewDotGraph(rootNode node.Node) *simple.DirectedGraph {
 	g := simple.NewDirectedGraph()
 
-	dotIdToIDMap := make(map[string]int64)
+	dotIdToDotNodeMap := make(map[string]*dotNode)
 	rootDotNode := newDotNode(rootNode, g.NewNode())
 	g.AddNode(rootDotNode)
-	dotIdToIDMap[rootDotNode.DOTID()] = rootDotNode.ID()
-	addDomainNodeChildrenToDotGraph(rootNode, rootDotNode, g)
+	dotIdToDotNodeMap[rootNode.GetLabel()] = rootDotNode
+	addDomainNodeChildrenToDotGraph(rootNode, rootDotNode, g, dotIdToDotNodeMap)
 
 	return g
 }
