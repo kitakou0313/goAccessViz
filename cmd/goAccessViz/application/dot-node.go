@@ -39,7 +39,7 @@ func addDomainNodeChildrenToDotGraph(rootNode node.Node, rootDotNode *dotNode, g
 	}
 }
 
-func NewDotGraph(rootNode node.Node) *simple.DirectedGraph {
+func NewDotGraph(rootNodes []node.Node) *simple.DirectedGraph {
 	g := simple.NewDirectedGraph()
 
 	dotIdToDotNodeMap := make(map[string]*dotNode)
