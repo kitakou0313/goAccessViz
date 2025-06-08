@@ -131,9 +131,9 @@ func TestNewDotGraphWithSome2IncomingEdges(t *testing.T) {
 	}
 }
 
-func validDotNodeInSline(dotNode *dotNode, nodesSlice []graph.Node) bool {
-	for _, node := range nodesSlice {
-		if dotNode.DOTID() == node.(*dotNode).DOTID() {
+func validIfDotNodeIsInSline(domainNode node.Node, gonumNodesList []graph.Node) bool {
+	for _, goNumNode := range gonumNodesList {
+		if domainNode.GetLabel() == goNumNode.(*dotNode).DOTID() {
 			return true
 		}
 	}
