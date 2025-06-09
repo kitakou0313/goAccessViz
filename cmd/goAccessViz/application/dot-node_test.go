@@ -27,6 +27,21 @@ func TestDOTID(t *testing.T) {
 	}
 }
 
+func TestGetLabel(t *testing.T) {
+	expected := "test.dot.node"
+
+	dotNode := &dotNode{
+		label: expected,
+		Node:  nil,
+	}
+
+	actual := dotNode.Getlabel()
+
+	if actual != expected {
+		t.Errorf("Expected Getlabel res to be '%s', but got '%s'", expected, actual)
+	}
+}
+
 // DotNodeの生成メソッドに対してのテスト
 func TestNewDotNode(t *testing.T) {
 	testNodeName := "testFunction"
