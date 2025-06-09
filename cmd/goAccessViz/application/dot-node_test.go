@@ -52,7 +52,7 @@ func TestNewDotGraphWithTreeGraph(t *testing.T) {
 	}
 	testRootNode := node.NewFunctionNode(testNodeName, testChildrenNodes)
 
-	dotGrapth := NewDotGraph(testRootNode)
+	dotGrapth := NewDotGraph([]node.Node{testRootNode})
 
 	// トポロジカルソートして確認
 	sortedDotNodes, err := topo.Sort(dotGrapth)
@@ -97,7 +97,7 @@ func TestNewDotGraphWithSome2IncomingEdges(t *testing.T) {
 	testNodeName := "testFunction"
 	testRootNode := node.NewFunctionNode(testNodeName, testChildrenNodes)
 
-	dotGrapth := NewDotGraph(testRootNode)
+	dotGrapth := NewDotGraph([]node.Node{testRootNode})
 
 	// トポロジカルソートして確認
 	sortedDotNodes, err := topo.Sort(dotGrapth)
@@ -160,20 +160,24 @@ func TestNewDotGraphWithSomeRootNodes(t *testing.T) {
 	}
 
 	// ルートノードが最初に来ることを確認
-	if testRootNode1.GetLabel() != sortedDotNodes[0].(*dotNode).DOTID() {
-		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode1.GetLabel(), sortedDotNodes[0].(*dotNode).DOTID())
+	if validIfDotNodeIsInSline(testRootNode1, sortedDotNodes[:2]) == false {
+		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode1.GetLabel(), sortedDotNodes[:2])
+
+	}
+	if validIfDotNodeIsInSline(testRootNode2, sortedDotNodes[:2]) == false {
+		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode2.GetLabel(), sortedDotNodes[:2])
 
 	}
 
 	// 子ノードが正しく追加されていることを確認
-	if len(sortedDotNodes)-1 != len(testChildrenNodes) {
-		t.Errorf("Expected %d child nodes, but got %d", len(testChildrenNodes), len(sortedDotNodes)-1)
+	if len(sortedDotNodes)-2 != len(testChildrenNodes) {
+		t.Errorf("Expected %d child nodes, but got %d", len(testChildrenNodes), len(sortedDotNodes)-2)
 	}
 
 	childDomainNodesExistingInDotGraph := make(map[string]bool)
 	for _, childDomainNode := range testChildrenNodes {
 		childDomainNodesExistingInDotGraph[childDomainNode.GetLabel()] = false
-		for _, childDotNode := range sortedDotNodes[1:] {
+		for _, childDotNode := range sortedDotNodes[2:] {
 			childDomainNodesExistingInDotGraph[childDotNode.(*dotNode).DOTID()] = true
 		}
 	}

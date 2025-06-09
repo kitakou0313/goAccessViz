@@ -43,10 +43,12 @@ func NewDotGraph(rootNodes []node.Node) *simple.DirectedGraph {
 	g := simple.NewDirectedGraph()
 
 	dotIdToDotNodeMap := make(map[string]*dotNode)
-	rootDotNode := newDotNode(rootNode, g.NewNode())
-	g.AddNode(rootDotNode)
-	dotIdToDotNodeMap[rootNode.GetLabel()] = rootDotNode
-	addDomainNodeChildrenToDotGraph(rootNode, rootDotNode, g, dotIdToDotNodeMap)
+	for _, rootNode := range rootNodes {
+		rootDotNode := newDotNode(rootNode, g.NewNode())
+		g.AddNode(rootDotNode)
+		dotIdToDotNodeMap[rootNode.GetLabel()] = rootDotNode
+		addDomainNodeChildrenToDotGraph(rootNode, rootDotNode, g, dotIdToDotNodeMap)
+	}
 
 	return g
 }
