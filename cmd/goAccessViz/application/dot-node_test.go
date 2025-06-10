@@ -76,8 +76,8 @@ func TestNewDotGraphWithTreeGraph(t *testing.T) {
 	}
 
 	// ルートノードが最初に来ることを確認
-	if testRootNode.GetLabel() != sortedDotNodes[0].(*dotNode).DOTID() {
-		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode.GetLabel(), sortedDotNodes[0].(*dotNode).DOTID())
+	if testRootNode.GetLabel() != sortedDotNodes[0].(*dotNode).Getlabel() {
+		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode.GetLabel(), sortedDotNodes[0].(*dotNode).Getlabel())
 
 	}
 
@@ -90,7 +90,7 @@ func TestNewDotGraphWithTreeGraph(t *testing.T) {
 	for _, childDomainNode := range testChildrenNodes {
 		childDomainNodesExistingInDotGraph[childDomainNode.GetLabel()] = false
 		for _, childDotNode := range sortedDotNodes[1:] {
-			childDomainNodesExistingInDotGraph[childDotNode.(*dotNode).DOTID()] = true
+			childDomainNodesExistingInDotGraph[childDotNode.(*dotNode).Getlabel()] = true
 		}
 	}
 
@@ -121,8 +121,8 @@ func TestNewDotGraphWithSome2IncomingEdges(t *testing.T) {
 	}
 
 	// ルートノードが最初に来ることを確認
-	if testRootNode.GetLabel() != sortedDotNodes[0].(*dotNode).DOTID() {
-		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode.GetLabel(), sortedDotNodes[0].(*dotNode).DOTID())
+	if testRootNode.GetLabel() != sortedDotNodes[0].(*dotNode).Getlabel() {
+		t.Errorf("Expected root node '%s' to be first, but got '%s'", testRootNode.GetLabel(), sortedDotNodes[0].(*dotNode).Getlabel())
 
 	}
 
@@ -135,7 +135,7 @@ func TestNewDotGraphWithSome2IncomingEdges(t *testing.T) {
 	for _, childDomainNode := range testChildrenNodes {
 		childDomainNodesExistingInDotGraph[childDomainNode.GetLabel()] = false
 		for _, childDotNode := range sortedDotNodes[1:] {
-			childDomainNodesExistingInDotGraph[childDotNode.(*dotNode).DOTID()] = true
+			childDomainNodesExistingInDotGraph[childDotNode.(*dotNode).Getlabel()] = true
 		}
 	}
 
@@ -148,7 +148,7 @@ func TestNewDotGraphWithSome2IncomingEdges(t *testing.T) {
 
 func validIfDotNodeIsInSline(domainNode node.Node, gonumNodesList []graph.Node) bool {
 	for _, goNumNode := range gonumNodesList {
-		if domainNode.GetLabel() == goNumNode.(*dotNode).DOTID() {
+		if domainNode.GetLabel() == goNumNode.(*dotNode).Getlabel() {
 			return true
 		}
 	}
@@ -193,7 +193,7 @@ func TestNewDotGraphWithSomeRootNodes(t *testing.T) {
 	for _, childDomainNode := range testChildrenNodes {
 		childDomainNodesExistingInDotGraph[childDomainNode.GetLabel()] = false
 		for _, childDotNode := range sortedDotNodes[2:] {
-			childDomainNodesExistingInDotGraph[childDotNode.(*dotNode).DOTID()] = true
+			childDomainNodesExistingInDotGraph[childDotNode.(*dotNode).Getlabel()] = true
 		}
 	}
 

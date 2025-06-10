@@ -16,6 +16,10 @@ func (d *dotNode) DOTID() string {
 	return d.label
 }
 
+func (d *dotNode) Getlabel() string {
+	return d.DOTID()
+}
+
 func newDotNode(node node.Node, goNumDotNode graph.Node) *dotNode {
 	return &dotNode{
 		Node:  goNumDotNode,
