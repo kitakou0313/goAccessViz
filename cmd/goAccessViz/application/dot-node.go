@@ -4,6 +4,7 @@ import (
 	"goAccessViz/cmd/goAccessViz/domain/node"
 
 	"gonum.org/v1/gonum/graph"
+	"gonum.org/v1/gonum/graph/encoding/dot"
 	"gonum.org/v1/gonum/graph/simple"
 )
 
@@ -55,4 +56,13 @@ func NewDotGraph(rootNodes []node.Node) *simple.DirectedGraph {
 	}
 
 	return g
+}
+
+func ConvertDotGraphToString(dotGraph *simple.DirectedGraph) (string, error) {
+	b, err := dot.Marshal(dotGraph, "Graph", "", " ")
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
