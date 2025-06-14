@@ -3,9 +3,6 @@ package main
 import (
 	"goAccessViz/cmd/goAccessViz/application"
 	"goAccessViz/cmd/goAccessViz/domain/node"
-	"os"
-
-	"gonum.org/v1/gonum/graph/encoding/dot"
 )
 
 func main() {
@@ -20,7 +17,7 @@ func main() {
 
 	dotGrapth := application.NewDotGraph([]node.Node{testRootNode1, testRootNode2})
 
-	b, _ := dot.Marshal(dotGrapth, "Graph", "", " ")
-	os.WriteFile("graph.dot", b, 0644)
+	convertedDotGraph, _ := application.ConvertDotGraphToString(dotGrapth)
+	print(convertedDotGraph)
 
 }
