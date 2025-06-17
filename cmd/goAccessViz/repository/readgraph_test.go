@@ -162,16 +162,16 @@ func TestCreateDBTableNodes(t *testing.T) {
 		"INSERT INTO comments (post_id, content) VALUES (?, ?)",
 	}
 
-	dbNodes := createDBTableNodes(sqlStrings)
+	dbNodesMap := createDBTableNodesMap(sqlStrings)
 
 	expectedTables := map[string]bool{"users": true, "posts": true, "comments": true}
-	if len(dbNodes) != len(expectedTables) {
-		t.Errorf("Expected %d DB table nodes, got %d", len(expectedTables), len(dbNodes))
+	if len(dbNodesMap) != len(expectedTables) {
+		t.Errorf("Expected %d DB table nodes, got %d", len(expectedTables), len(dbNodesMap))
 	}
 
 	foundTables := make(map[string]bool)
-	for _, dbNode := range dbNodes {
-		foundTables[dbNode.GetLabel()] = true
+	for tableName := range dbNodesMap {
+		foundTables[tableName] = true
 	}
 
 	for expectedTable := range expectedTables {
@@ -183,24 +183,26 @@ func TestCreateDBTableNodes(t *testing.T) {
 
 func TestReadGraphWithSQLAnalysis(t *testing.T) {
 	// This test will verify that ReadGraph includes SQL table analysis
-	// We'll need a test package with SQL strings
+	// In the new implementation, DB tables are children of functions, not top-level nodes
 	nodes, err := ReadGraph("goAccessViz/testpkg")
 	if err != nil {
 		t.Fatalf("Failed to read graph with SQL analysis: %v", err)
 	}
 
-	// Count different node types
+	// Count function nodes and find DB table nodes as children
 	functionNodes := 0
-	dbTableNodes := 0
 	var dbTableNames []string
 
 	for _, n := range nodes {
-		switch dbNode := n.(type) {
-		case *node.FunctionNode:
+		if fnNode, ok := n.(*node.FunctionNode); ok {
 			functionNodes++
-		case *node.DBTableNode:
-			dbTableNodes++
-			dbTableNames = append(dbTableNames, dbNode.GetLabel())
+			
+			// Check children for DB table nodes
+			for _, child := range fnNode.GetChildren() {
+				if dbNode, ok := child.(*node.DBTableNode); ok {
+					dbTableNames = append(dbTableNames, dbNode.GetLabel())
+				}
+			}
 		}
 	}
 
@@ -209,9 +211,9 @@ func TestReadGraphWithSQLAnalysis(t *testing.T) {
 		t.Error("Expected to find function nodes")
 	}
 
-	// Should also have DB table nodes (since we added SQL strings to testpkg)
-	if dbTableNodes == 0 {
-		t.Error("Expected to find DB table nodes from SQL analysis")
+	// Should also have DB table nodes as children (since we added SQL strings to testpkg)
+	if len(dbTableNames) == 0 {
+		t.Error("Expected to find DB table nodes as children of functions")
 	}
 
 	// Check for specific tables we expect
@@ -227,6 +229,108 @@ func TestReadGraphWithSQLAnalysis(t *testing.T) {
 		}
 	}
 
-	t.Logf("Found %d function nodes and %d DB table nodes", functionNodes, dbTableNodes)
+	t.Logf("Found %d function nodes and %d DB table relationships", functionNodes, len(dbTableNames))
 	t.Logf("DB tables found: %v", dbTableNames)
+}
+
+func TestFunctionToTableRelationships(t *testing.T) {
+	// Test that functions that query SQL tables have those tables as children
+	nodes, err := ReadGraph("goAccessViz/testpkg")
+	if err != nil {
+		t.Fatalf("Failed to read graph: %v", err)
+	}
+
+
+	// Find functions that should have SQL table children
+	var getUserFunc, createPostFunc, updateOrderFunc *node.FunctionNode
+	
+	for _, n := range nodes {
+		if fnNode, ok := n.(*node.FunctionNode); ok {
+			label := fnNode.GetLabel()
+			if contains(label, "GetUser") {
+				getUserFunc = fnNode
+			} else if contains(label, "CreatePost") {
+				createPostFunc = fnNode
+			} else if contains(label, "UpdateOrder") {
+				updateOrderFunc = fnNode
+			}
+		}
+	}
+
+	// Test GetUser function should have 'users' table as child
+	if getUserFunc != nil {
+		hasUsersTable := false
+		for _, child := range getUserFunc.GetChildren() {
+			if dbNode, ok := child.(*node.DBTableNode); ok && dbNode.GetLabel() == "users" {
+				hasUsersTable = true
+				break
+			}
+		}
+		if !hasUsersTable {
+			t.Error("GetUser function should have 'users' table as child node")
+		}
+	} else {
+		t.Error("Could not find GetUser function")
+	}
+
+	// Test CreatePost function should have 'posts' table as child
+	if createPostFunc != nil {
+		hasPostsTable := false
+		for _, child := range createPostFunc.GetChildren() {
+			if dbNode, ok := child.(*node.DBTableNode); ok && dbNode.GetLabel() == "posts" {
+				hasPostsTable = true
+				break
+			}
+		}
+		if !hasPostsTable {
+			t.Error("CreatePost function should have 'posts' table as child node")
+		}
+	} else {
+		t.Error("Could not find CreatePost function")
+	}
+
+	// Test UpdateOrder function should have 'orders' table as child
+	if updateOrderFunc != nil {
+		hasOrdersTable := false
+		for _, child := range updateOrderFunc.GetChildren() {
+			if dbNode, ok := child.(*node.DBTableNode); ok && dbNode.GetLabel() == "orders" {
+				hasOrdersTable = true
+				break
+			}
+		}
+		if !hasOrdersTable {
+			t.Error("UpdateOrder function should have 'orders' table as child node")
+		}
+	} else {
+		t.Error("Could not find UpdateOrder function")
+	}
+
+	// Test that GetUserPosts function has both 'users' and 'posts' tables as children
+	var getUserPostsFunc *node.FunctionNode
+	for _, n := range nodes {
+		if fnNode, ok := n.(*node.FunctionNode); ok {
+			if contains(fnNode.GetLabel(), "GetUserPosts") {
+				getUserPostsFunc = fnNode
+				break
+			}
+		}
+	}
+
+	if getUserPostsFunc != nil {
+		foundTables := make(map[string]bool)
+		for _, child := range getUserPostsFunc.GetChildren() {
+			if dbNode, ok := child.(*node.DBTableNode); ok {
+				foundTables[dbNode.GetLabel()] = true
+			}
+		}
+		
+		if !foundTables["users"] {
+			t.Error("GetUserPosts function should have 'users' table as child node")
+		}
+		if !foundTables["posts"] {
+			t.Error("GetUserPosts function should have 'posts' table as child node")
+		}
+	} else {
+		t.Error("Could not find GetUserPosts function")
+	}
 }

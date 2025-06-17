@@ -18,17 +18,33 @@ func ReadGraph(packagePath string) ([]node.Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	return createNodesFromCallGraphWithSQL(prog, pkgs), nil
+	
+	// Build function call graph
+	cg := cha.CallGraph(prog)
+	nodeMap, childrenMap := buildNodeMaps(cg)
+	
+	// Add all functions from the package, not just those in call graph
+	addAllPackageFunctions(prog, pkgs, nodeMap, childrenMap)
+	
+	// Analyze SQL strings and create DB table nodes
+	sqlStrings := analyzePackageForSQL(pkgs)
+	dbTableMap := createDBTableNodesMap(sqlStrings)
+	
+	// Establish function-to-table relationships
+	establishFunctionTableRelationships(nodeMap, childrenMap, pkgs, dbTableMap)
+	
+	// Populate nodes with updated children (including SQL tables)
+	populateNodes(nodeMap, childrenMap)
+	
+	// Return only function nodes (SQL table nodes are now children of functions)
+	var allNodes []node.Node
+	for _, fnNode := range nodeMap {
+		allNodes = append(allNodes, fnNode)
+	}
+	
+	return allNodes, nil
 }
 
-func buildSSAProgram(packagePath string) (*ssa.Program, error) {
-	cfg := createPackageConfig()
-	pkgs, err := packages.Load(cfg, packagePath)
-	if err != nil {
-		return nil, err
-	}
-	return buildProgram(pkgs), nil
-}
 
 func buildSSAProgramWithPackages(packagePath string) (*ssa.Program, []*packages.Package, error) {
 	cfg := createPackageConfig()
@@ -52,33 +68,6 @@ func buildProgram(pkgs []*packages.Package) *ssa.Program {
 	return prog
 }
 
-func createNodesFromCallGraph(prog *ssa.Program) []node.Node {
-	cg := cha.CallGraph(prog)
-	nodeMap, childrenMap := buildNodeMaps(cg)
-	populateNodes(nodeMap, childrenMap)
-	return collectRootNodes(nodeMap)
-}
-
-func createNodesFromCallGraphWithSQL(prog *ssa.Program, pkgs []*packages.Package) []node.Node {
-	cg := cha.CallGraph(prog)
-	nodeMap, childrenMap := buildNodeMaps(cg)
-	populateNodes(nodeMap, childrenMap)
-
-	// Analyze SQL strings and create DB table nodes
-	sqlStrings := analyzePackageForSQL(pkgs)
-	dbNodes := createDBTableNodes(sqlStrings)
-
-	// Combine function nodes and DB table nodes
-	var allNodes []node.Node
-	for _, fnNode := range nodeMap {
-		allNodes = append(allNodes, fnNode)
-	}
-	for _, dbNode := range dbNodes {
-		allNodes = append(allNodes, dbNode)
-	}
-
-	return allNodes
-}
 
 func buildNodeMaps(cg *callgraph.Graph) (map[*ssa.Function]*node.FunctionNode, map[*ssa.Function][]node.Node) {
 	nodeMap := make(map[*ssa.Function]*node.FunctionNode)
@@ -110,12 +99,29 @@ func populateNodes(nodeMap map[*ssa.Function]*node.FunctionNode, childrenMap map
 	}
 }
 
-func collectRootNodes(nodeMap map[*ssa.Function]*node.FunctionNode) []node.Node {
-	var rootNodes []node.Node
-	for _, fnNode := range nodeMap {
-		rootNodes = append(rootNodes, fnNode)
+
+func addAllPackageFunctions(prog *ssa.Program, pkgs []*packages.Package, nodeMap map[*ssa.Function]*node.FunctionNode, childrenMap map[*ssa.Function][]node.Node) {
+	// Iterate through all SSA packages and their functions
+	for _, ssaPkg := range prog.AllPackages() {
+		// Check if this SSA package corresponds to one of our target packages
+		for _, pkg := range pkgs {
+			if ssaPkg.Pkg.Path() == pkg.PkgPath {
+				// Add all functions from this package
+				for _, member := range ssaPkg.Members {
+					if fn, ok := member.(*ssa.Function); ok {
+						// Only add if not already in nodeMap
+						if _, exists := nodeMap[fn]; !exists {
+							nodeMap[fn] = &node.FunctionNode{}
+							// Initialize empty children slice if not exists
+							if _, exists := childrenMap[fn]; !exists {
+								childrenMap[fn] = []node.Node{}
+							}
+						}
+					}
+				}
+			}
+		}
 	}
-	return rootNodes
 }
 
 // SQL analysis functions
@@ -173,21 +179,20 @@ func detectSQLStrings(sourceCode string) []string {
 	return sqlStrings
 }
 
-func createDBTableNodes(sqlStrings []string) []*node.DBTableNode {
-	tableSet := make(map[string]bool)
-	var dbNodes []*node.DBTableNode
+
+func createDBTableNodesMap(sqlStrings []string) map[string]*node.DBTableNode {
+	tableMap := make(map[string]*node.DBTableNode)
 
 	for _, sql := range sqlStrings {
 		tables := extractTablesFromSQL(sql)
 		for _, table := range tables {
-			if !tableSet[table] {
-				tableSet[table] = true
-				dbNodes = append(dbNodes, node.NewDBTableNode(table, []node.Node{}))
+			if _, exists := tableMap[table]; !exists {
+				tableMap[table] = node.NewDBTableNode(table, []node.Node{})
 			}
 		}
 	}
 
-	return dbNodes
+	return tableMap
 }
 
 func analyzePackageForSQL(pkgs []*packages.Package) []string {
@@ -219,4 +224,70 @@ func isSQLString(s string) bool {
 		}
 	}
 	return false
+}
+
+func establishFunctionTableRelationships(nodeMap map[*ssa.Function]*node.FunctionNode, childrenMap map[*ssa.Function][]node.Node, pkgs []*packages.Package, dbTableMap map[string]*node.DBTableNode) {
+	// Map function names to their SSA functions for lookup
+	funcNameToSSA := make(map[string]*ssa.Function)
+	for ssaFunc := range nodeMap {
+		if ssaFunc.Name() != "" {
+			funcNameToSSA[ssaFunc.Name()] = ssaFunc
+		}
+	}
+	
+	// Analyze each package for SQL strings within functions
+	for _, pkg := range pkgs {
+		for _, file := range pkg.Syntax {
+			ast.Inspect(file, func(n ast.Node) bool {
+				// Look for function declarations
+				if funcDecl, ok := n.(*ast.FuncDecl); ok && funcDecl.Name != nil {
+					funcName := funcDecl.Name.Name
+					
+					// Find the corresponding SSA function
+					var targetSSAFunc *ssa.Function
+					for ssaFunc := range nodeMap {
+						if ssaFunc.Name() == funcName {
+							targetSSAFunc = ssaFunc
+							break
+						}
+					}
+					
+					if targetSSAFunc != nil {
+						// Find SQL strings within this function
+						sqlStringsInFunc := findSQLStringsInFunction(funcDecl)
+						
+						// For each SQL string, find referenced tables and add them as children
+						for _, sqlStr := range sqlStringsInFunc {
+							tables := extractTablesFromSQL(sqlStr)
+							for _, tableName := range tables {
+								if dbTableNode, exists := dbTableMap[tableName]; exists {
+									// Add the table node as a child of this function
+									childrenMap[targetSSAFunc] = append(childrenMap[targetSSAFunc], dbTableNode)
+								}
+							}
+						}
+					}
+				}
+				return true
+			})
+		}
+	}
+}
+
+func findSQLStringsInFunction(funcDecl *ast.FuncDecl) []string {
+	var sqlStrings []string
+	
+	if funcDecl.Body != nil {
+		ast.Inspect(funcDecl.Body, func(n ast.Node) bool {
+			if lit, ok := n.(*ast.BasicLit); ok && lit.Kind.String() == "STRING" {
+				value := strings.Trim(lit.Value, `"'`+"`")
+				if isSQLString(value) {
+					sqlStrings = append(sqlStrings, value)
+				}
+			}
+			return true
+		})
+	}
+	
+	return sqlStrings
 }
