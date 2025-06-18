@@ -1,6 +1,6 @@
 package node
 
-type Node interface {
-	GetChildren() []Node
+type GraphNode interface {
+	GetChildren() []GraphNode
 	GetLabel() string
 }

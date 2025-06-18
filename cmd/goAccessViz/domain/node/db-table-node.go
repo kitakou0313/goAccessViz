@@ -1,22 +1,22 @@
 package node
 
-// DBTableNode はSQLテーブルに相当するNode
-type DBTableNode struct {
+// DatabaseTableGraphNode はSQLテーブルに相当するNode
+type DatabaseTableGraphNode struct {
 	tableName string
-	children  []Node
+	children  []GraphNode
 }
 
-func NewDBTableNode(tableName string, children []Node) *DBTableNode {
-	return &DBTableNode{
+func NewDatabaseTableGraphNode(tableName string, children []GraphNode) *DatabaseTableGraphNode {
+	return &DatabaseTableGraphNode{
 		tableName: tableName,
 		children:  children,
 	}
 }
 
-func (dbtb *DBTableNode) GetChildren() []Node {
+func (dbtb *DatabaseTableGraphNode) GetChildren() []GraphNode {
 	return dbtb.children
 }
 
-func (dbtb *DBTableNode) GetLabel() string {
+func (dbtb *DatabaseTableGraphNode) GetLabel() string {
 	return dbtb.tableName
 }

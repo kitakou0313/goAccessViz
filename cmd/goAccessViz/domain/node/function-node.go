@@ -1,22 +1,22 @@
 package node
 
 // 関数に相当するNode
-type FunctionNode struct {
+type FunctionGraphNode struct {
 	funtionName string
-	children    []Node
+	children    []GraphNode
 }
 
-func NewFunctionNode(functionName string, children []Node) *FunctionNode {
-	return &FunctionNode{
+func NewFunctionGraphNode(functionName string, children []GraphNode) *FunctionGraphNode {
+	return &FunctionGraphNode{
 		funtionName: functionName,
 		children:    children,
 	}
 }
 
-func (fn *FunctionNode) GetChildren() []Node {
+func (fn *FunctionGraphNode) GetChildren() []GraphNode {
 	return fn.children
 }
 
-func (fn *FunctionNode) GetLabel() string {
+func (fn *FunctionGraphNode) GetLabel() string {
 	return fn.funtionName
 }

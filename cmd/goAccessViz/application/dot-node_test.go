@@ -45,7 +45,7 @@ func TestGetLabel(t *testing.T) {
 // DotNodeの生成メソッドに対してのテスト
 func TestNewDotNode(t *testing.T) {
 	testNodeName := "testFunction"
-	testNode := node.NewFunctionNode(testNodeName, nil)
+	testNode := node.NewFunctionGraphNode(testNodeName, nil)
 
 	tmpGraph := simple.NewDirectedGraph()
 	tmpGoNumDotNode := tmpGraph.NewNode()
@@ -61,13 +61,13 @@ func TestNewDotNode(t *testing.T) {
 // TODO:　網羅性を考慮したテストを書く
 func TestNewDotGraphWithTreeGraph(t *testing.T) {
 	testNodeName := "testFunction"
-	testChildrenNodes := []node.Node{
-		node.NewFunctionNode("childFunctionNode", nil),
-		node.NewDBTableNode("childDBNode", nil),
+	testChildrenNodes := []node.GraphNode{
+		node.NewFunctionGraphNode("childFunctionNode", nil),
+		node.NewDatabaseTableGraphNode("childDBNode", nil),
 	}
-	testRootNode := node.NewFunctionNode(testNodeName, testChildrenNodes)
+	testRootNode := node.NewFunctionGraphNode(testNodeName, testChildrenNodes)
 
-	dotGrapth := NewDotGraph([]node.Node{testRootNode})
+	dotGrapth := NewDotGraph([]node.GraphNode{testRootNode})
 
 	// トポロジカルソートして確認
 	sortedDotNodes, err := topo.Sort(dotGrapth)
@@ -103,16 +103,16 @@ func TestNewDotGraphWithTreeGraph(t *testing.T) {
 
 // 一つのNodeが二つ入力辺を持つ場合のテスト 例:A -> C, B -> C
 func TestNewDotGraphWithSome2IncomingEdges(t *testing.T) {
-	nodeHaving2IncomingEdges := node.NewFunctionNode("nodeHaving2IncomingEdges", nil)
-	testChildrenNodes := []node.Node{
+	nodeHaving2IncomingEdges := node.NewFunctionGraphNode("nodeHaving2IncomingEdges", nil)
+	testChildrenNodes := []node.GraphNode{
 		nodeHaving2IncomingEdges,
-		node.NewFunctionNode("childFunctionNode", []node.Node{nodeHaving2IncomingEdges}),
-		node.NewDBTableNode("childDBNode", nil),
+		node.NewFunctionGraphNode("childFunctionNode", []node.GraphNode{nodeHaving2IncomingEdges}),
+		node.NewDatabaseTableGraphNode("childDBNode", nil),
 	}
 	testNodeName := "testFunction"
-	testRootNode := node.NewFunctionNode(testNodeName, testChildrenNodes)
+	testRootNode := node.NewFunctionGraphNode(testNodeName, testChildrenNodes)
 
-	dotGrapth := NewDotGraph([]node.Node{testRootNode})
+	dotGrapth := NewDotGraph([]node.GraphNode{testRootNode})
 
 	// トポロジカルソートして確認
 	sortedDotNodes, err := topo.Sort(dotGrapth)
@@ -146,7 +146,7 @@ func TestNewDotGraphWithSome2IncomingEdges(t *testing.T) {
 	}
 }
 
-func validIfDotNodeIsInSline(domainNode node.Node, gonumNodesList []graph.Node) bool {
+func validIfDotNodeIsInSline(domainNode node.GraphNode, gonumNodesList []graph.Node) bool {
 	for _, goNumNode := range gonumNodesList {
 		if domainNode.GetLabel() == goNumNode.(*dotNode).Getlabel() {
 			return true
@@ -158,15 +158,15 @@ func validIfDotNodeIsInSline(domainNode node.Node, gonumNodesList []graph.Node) 
 
 func TestNewDotGraphWithSomeRootNodes(t *testing.T) {
 	testNodeName1 := "testFunction1"
-	testChildrenNodes := []node.Node{
-		node.NewFunctionNode("childFunctionNode", nil),
-		node.NewDBTableNode("childDBNode", nil),
+	testChildrenNodes := []node.GraphNode{
+		node.NewFunctionGraphNode("childFunctionNode", nil),
+		node.NewDatabaseTableGraphNode("childDBNode", nil),
 	}
-	testRootNode1 := node.NewFunctionNode(testNodeName1, testChildrenNodes)
+	testRootNode1 := node.NewFunctionGraphNode(testNodeName1, testChildrenNodes)
 	testNodeName2 := "testFunction2"
-	testRootNode2 := node.NewFunctionNode(testNodeName2, testChildrenNodes)
+	testRootNode2 := node.NewFunctionGraphNode(testNodeName2, testChildrenNodes)
 
-	dotGrapth := NewDotGraph([]node.Node{testRootNode1, testRootNode2})
+	dotGrapth := NewDotGraph([]node.GraphNode{testRootNode1, testRootNode2})
 
 	// トポロジカルソートして確認
 	sortedDotNodes, err := topo.Sort(dotGrapth)

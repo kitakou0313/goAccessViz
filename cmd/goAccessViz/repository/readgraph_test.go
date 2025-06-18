@@ -282,12 +282,12 @@ func TestReadGraphWithSQLAnalysis(t *testing.T) {
 	var dbTableNames []string
 
 	for _, n := range nodes {
-		if fnNode, ok := n.(*node.FunctionNode); ok {
+		if fnNode, ok := n.(*node.FunctionGraphNode); ok {
 			functionNodes++
 
 			// Check children for DB table nodes
 			for _, child := range fnNode.GetChildren() {
-				if dbNode, ok := child.(*node.DBTableNode); ok {
+				if dbNode, ok := child.(*node.DatabaseTableGraphNode); ok {
 					dbTableNames = append(dbTableNames, dbNode.GetLabel())
 				}
 			}
@@ -329,10 +329,10 @@ func TestFunctionToTableRelationships(t *testing.T) {
 	}
 
 	// Find functions that should have SQL table children
-	var getUserFunc, createPostFunc, updateOrderFunc *node.FunctionNode
+	var getUserFunc, createPostFunc, updateOrderFunc *node.FunctionGraphNode
 
 	for _, n := range nodes {
-		if fnNode, ok := n.(*node.FunctionNode); ok {
+		if fnNode, ok := n.(*node.FunctionGraphNode); ok {
 			label := fnNode.GetLabel()
 			if contains(label, "GetUser") {
 				getUserFunc = fnNode
@@ -348,7 +348,7 @@ func TestFunctionToTableRelationships(t *testing.T) {
 	if getUserFunc != nil {
 		hasUsersTable := false
 		for _, child := range getUserFunc.GetChildren() {
-			if dbNode, ok := child.(*node.DBTableNode); ok && dbNode.GetLabel() == "users" {
+			if dbNode, ok := child.(*node.DatabaseTableGraphNode); ok && dbNode.GetLabel() == "users" {
 				hasUsersTable = true
 				break
 			}
@@ -364,7 +364,7 @@ func TestFunctionToTableRelationships(t *testing.T) {
 	if createPostFunc != nil {
 		hasPostsTable := false
 		for _, child := range createPostFunc.GetChildren() {
-			if dbNode, ok := child.(*node.DBTableNode); ok && dbNode.GetLabel() == "posts" {
+			if dbNode, ok := child.(*node.DatabaseTableGraphNode); ok && dbNode.GetLabel() == "posts" {
 				hasPostsTable = true
 				break
 			}
@@ -380,7 +380,7 @@ func TestFunctionToTableRelationships(t *testing.T) {
 	if updateOrderFunc != nil {
 		hasOrdersTable := false
 		for _, child := range updateOrderFunc.GetChildren() {
-			if dbNode, ok := child.(*node.DBTableNode); ok && dbNode.GetLabel() == "orders" {
+			if dbNode, ok := child.(*node.DatabaseTableGraphNode); ok && dbNode.GetLabel() == "orders" {
 				hasOrdersTable = true
 				break
 			}
@@ -393,9 +393,9 @@ func TestFunctionToTableRelationships(t *testing.T) {
 	}
 
 	// Test that GetUserPosts function has both 'users' and 'posts' tables as children
-	var getUserPostsFunc *node.FunctionNode
+	var getUserPostsFunc *node.FunctionGraphNode
 	for _, n := range nodes {
-		if fnNode, ok := n.(*node.FunctionNode); ok {
+		if fnNode, ok := n.(*node.FunctionGraphNode); ok {
 			if contains(fnNode.GetLabel(), "GetUserPosts") {
 				getUserPostsFunc = fnNode
 				break
@@ -406,7 +406,7 @@ func TestFunctionToTableRelationships(t *testing.T) {
 	if getUserPostsFunc != nil {
 		foundTables := make(map[string]bool)
 		for _, child := range getUserPostsFunc.GetChildren() {
-			if dbNode, ok := child.(*node.DBTableNode); ok {
+			if dbNode, ok := child.(*node.DatabaseTableGraphNode); ok {
 				foundTables[dbNode.GetLabel()] = true
 			}
 		}
