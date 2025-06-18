@@ -118,8 +118,14 @@ func TestExtractTablesFromSQL(t *testing.T) {
 }
 
 func TestDetectSQLStrings(t *testing.T) {
-	testCode := `
-package main
+	tests := []struct {
+		name     string
+		code     string
+		expected []string
+	}{
+		{
+			name: "Basic SELECT and INSERT",
+			code: `package main
 
 func GetUser(id int) (*User, error) {
 	query := "SELECT * FROM users WHERE id = ?"
@@ -130,28 +136,110 @@ func CreatePost(title string) error {
 	sql := "INSERT INTO posts (title) VALUES (?)"
 	_, err := db.Exec(sql, title)
 	return err
-}
-`
-
-	sqlStrings := detectSQLStrings(testCode)
-	expectedCount := 2
-	if len(sqlStrings) != expectedCount {
-		t.Errorf("Expected %d SQL strings, got %d", expectedCount, len(sqlStrings))
+}`,
+			expected: []string{
+				"SELECT * FROM users WHERE id = ?",
+				"INSERT INTO posts (title) VALUES (?)",
+			},
+		},
+		{
+			name: "Double quotes only",
+			code: `package main
+func Example() {
+	query1 := "SELECT * FROM table1"
+	query2 := "DELETE FROM table2 WHERE id = 1"
+}`,
+			expected: []string{
+				"SELECT * FROM table1",
+				"DELETE FROM table2 WHERE id = 1",
+			},
+		},
+		{
+			name: "Case insensitive keywords",
+			code: `package main
+func Example() {
+	query1 := "select * from users"
+	query2 := "Insert Into posts VALUES (1, ?)"
+	query3 := "update orders set status = ?"
+	query4 := "delete from comments where id = 1"
+}`,
+			expected: []string{
+				"select * from users",
+				"Insert Into posts VALUES (1, ?)",
+				"update orders set status = ?",
+				"delete from comments where id = 1",
+			},
+		},
+		{
+			name: "JOIN operations",
+			code: `package main
+func GetUserPosts() {
+	query := "SELECT u.name, p.title FROM users u JOIN posts p ON u.id = p.user_id"
+	db.Query(query)
+}`,
+			expected: []string{
+				"SELECT u.name, p.title FROM users u JOIN posts p ON u.id = p.user_id",
+			},
+		},
+		{
+			name: "Non-SQL strings should be ignored",
+			code: `package main
+func Example() {
+	regularString := "Hello World"
+	anotherString := "This is just text with no SQL"
+	sqlString := "SELECT * FROM users"
+	fmt.Println(regularString, anotherString)
+}`,
+			expected: []string{
+				"SELECT * FROM users",
+			},
+		},
+		{
+			name: "Empty or no SQL strings",
+			code: `package main
+func Example() {
+	message := "Hello World"
+	number := 42
+	fmt.Println(message, number)
+}`,
+			expected: []string{},
+		},
 	}
 
-	expectedTables := map[string]bool{"users": true, "posts": true}
-	allTables := make(map[string]bool)
-	for _, sql := range sqlStrings {
-		tables := extractTablesFromSQL(sql)
-		for _, table := range tables {
-			allTables[table] = true
-		}
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sqlStrings := detectSQLStrings(tt.code)
 
-	for expectedTable := range expectedTables {
-		if !allTables[expectedTable] {
-			t.Errorf("Expected to find table %s", expectedTable)
-		}
+			if len(sqlStrings) != len(tt.expected) {
+				t.Errorf("Expected %d SQL strings, got %d", len(tt.expected), len(sqlStrings))
+				t.Errorf("Expected: %v", tt.expected)
+				t.Errorf("Got: %v", sqlStrings)
+				return
+			}
+
+			// Create maps for comparison since order might vary
+			expectedMap := make(map[string]bool)
+			for _, expected := range tt.expected {
+				expectedMap[expected] = true
+			}
+
+			actualMap := make(map[string]bool)
+			for _, actual := range sqlStrings {
+				actualMap[actual] = true
+			}
+
+			for expected := range expectedMap {
+				if !actualMap[expected] {
+					t.Errorf("Expected to find SQL string: %s", expected)
+				}
+			}
+
+			for actual := range actualMap {
+				if !expectedMap[actual] {
+					t.Errorf("Unexpected SQL string found: %s", actual)
+				}
+			}
+		})
 	}
 }
 
@@ -196,7 +284,7 @@ func TestReadGraphWithSQLAnalysis(t *testing.T) {
 	for _, n := range nodes {
 		if fnNode, ok := n.(*node.FunctionNode); ok {
 			functionNodes++
-			
+
 			// Check children for DB table nodes
 			for _, child := range fnNode.GetChildren() {
 				if dbNode, ok := child.(*node.DBTableNode); ok {
@@ -240,10 +328,9 @@ func TestFunctionToTableRelationships(t *testing.T) {
 		t.Fatalf("Failed to read graph: %v", err)
 	}
 
-
 	// Find functions that should have SQL table children
 	var getUserFunc, createPostFunc, updateOrderFunc *node.FunctionNode
-	
+
 	for _, n := range nodes {
 		if fnNode, ok := n.(*node.FunctionNode); ok {
 			label := fnNode.GetLabel()
@@ -323,7 +410,7 @@ func TestFunctionToTableRelationships(t *testing.T) {
 				foundTables[dbNode.GetLabel()] = true
 			}
 		}
-		
+
 		if !foundTables["users"] {
 			t.Error("GetUserPosts function should have 'users' table as child node")
 		}

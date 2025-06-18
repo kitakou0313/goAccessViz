@@ -18,33 +18,32 @@ func ReadGraph(packagePath string) ([]node.Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Build function call graph
 	cg := cha.CallGraph(prog)
 	nodeMap, childrenMap := buildNodeMaps(cg)
-	
+
 	// Add all functions from the package, not just those in call graph
 	addAllPackageFunctions(prog, pkgs, nodeMap, childrenMap)
-	
+
 	// Analyze SQL strings and create DB table nodes
 	sqlStrings := analyzePackageForSQL(pkgs)
 	dbTableMap := createDBTableNodesMap(sqlStrings)
-	
+
 	// Establish function-to-table relationships
 	establishFunctionTableRelationships(nodeMap, childrenMap, pkgs, dbTableMap)
-	
+
 	// Populate nodes with updated children (including SQL tables)
 	populateNodes(nodeMap, childrenMap)
-	
+
 	// Return only function nodes (SQL table nodes are now children of functions)
 	var allNodes []node.Node
 	for _, fnNode := range nodeMap {
 		allNodes = append(allNodes, fnNode)
 	}
-	
+
 	return allNodes, nil
 }
-
 
 func buildSSAProgramWithPackages(packagePath string) (*ssa.Program, []*packages.Package, error) {
 	cfg := createPackageConfig()
@@ -67,7 +66,6 @@ func buildProgram(pkgs []*packages.Package) *ssa.Program {
 	prog.Build()
 	return prog
 }
-
 
 func buildNodeMaps(cg *callgraph.Graph) (map[*ssa.Function]*node.FunctionNode, map[*ssa.Function][]node.Node) {
 	nodeMap := make(map[*ssa.Function]*node.FunctionNode)
@@ -98,7 +96,6 @@ func populateNodes(nodeMap map[*ssa.Function]*node.FunctionNode, childrenMap map
 		*fnNode = *node.NewFunctionNode(fn.String(), children)
 	}
 }
-
 
 func addAllPackageFunctions(prog *ssa.Program, pkgs []*packages.Package, nodeMap map[*ssa.Function]*node.FunctionNode, childrenMap map[*ssa.Function][]node.Node) {
 	// Iterate through all SSA packages and their functions
@@ -179,7 +176,6 @@ func detectSQLStrings(sourceCode string) []string {
 	return sqlStrings
 }
 
-
 func createDBTableNodesMap(sqlStrings []string) map[string]*node.DBTableNode {
 	tableMap := make(map[string]*node.DBTableNode)
 
@@ -234,7 +230,7 @@ func establishFunctionTableRelationships(nodeMap map[*ssa.Function]*node.Functio
 			funcNameToSSA[ssaFunc.Name()] = ssaFunc
 		}
 	}
-	
+
 	// Analyze each package for SQL strings within functions
 	for _, pkg := range pkgs {
 		for _, file := range pkg.Syntax {
@@ -242,7 +238,7 @@ func establishFunctionTableRelationships(nodeMap map[*ssa.Function]*node.Functio
 				// Look for function declarations
 				if funcDecl, ok := n.(*ast.FuncDecl); ok && funcDecl.Name != nil {
 					funcName := funcDecl.Name.Name
-					
+
 					// Find the corresponding SSA function
 					var targetSSAFunc *ssa.Function
 					for ssaFunc := range nodeMap {
@@ -251,11 +247,11 @@ func establishFunctionTableRelationships(nodeMap map[*ssa.Function]*node.Functio
 							break
 						}
 					}
-					
+
 					if targetSSAFunc != nil {
 						// Find SQL strings within this function
 						sqlStringsInFunc := findSQLStringsInFunction(funcDecl)
-						
+
 						// For each SQL string, find referenced tables and add them as children
 						for _, sqlStr := range sqlStringsInFunc {
 							tables := extractTablesFromSQL(sqlStr)
@@ -276,7 +272,7 @@ func establishFunctionTableRelationships(nodeMap map[*ssa.Function]*node.Functio
 
 func findSQLStringsInFunction(funcDecl *ast.FuncDecl) []string {
 	var sqlStrings []string
-	
+
 	if funcDecl.Body != nil {
 		ast.Inspect(funcDecl.Body, func(n ast.Node) bool {
 			if lit, ok := n.(*ast.BasicLit); ok && lit.Kind.String() == "STRING" {
@@ -288,6 +284,6 @@ func findSQLStringsInFunction(funcDecl *ast.FuncDecl) []string {
 			return true
 		})
 	}
-	
+
 	return sqlStrings
 }
