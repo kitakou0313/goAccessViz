@@ -13,7 +13,7 @@ import (
 	"golang.org/x/tools/go/ssa/ssautil"
 )
 
-func ReadGraph(packagePath string) ([]node.GraphNode, error) {
+func ReadGraph(packagePath string) ([]node.TrackedEntity, error) {
 	prog, pkgs, err := buildSSAProgramWithPackages(packagePath)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func ReadGraph(packagePath string) ([]node.GraphNode, error) {
 	populateNodes(nodeMap, childrenMap)
 
 	// Return only function nodes (SQL table nodes are now children of functions)
-	var allNodes []node.GraphNode
+	var allNodes []node.TrackedEntity
 	for _, fnNode := range nodeMap {
 		allNodes = append(allNodes, fnNode)
 	}
@@ -67,14 +67,14 @@ func buildProgram(pkgs []*packages.Package) *ssa.Program {
 	return prog
 }
 
-func buildNodeMaps(cg *callgraph.Graph) (map[*ssa.Function]*node.FunctionGraphNode, map[*ssa.Function][]node.GraphNode) {
-	nodeMap := make(map[*ssa.Function]*node.FunctionGraphNode)
-	childrenMap := make(map[*ssa.Function][]node.GraphNode)
+func buildNodeMaps(cg *callgraph.Graph) (map[*ssa.Function]*node.FunctionTrackedEntity, map[*ssa.Function][]node.TrackedEntity) {
+	nodeMap := make(map[*ssa.Function]*node.FunctionTrackedEntity)
+	childrenMap := make(map[*ssa.Function][]node.TrackedEntity)
 	callgraph.GraphVisitEdges(cg, createEdgeVisitor(nodeMap, childrenMap))
 	return nodeMap, childrenMap
 }
 
-func createEdgeVisitor(nodeMap map[*ssa.Function]*node.FunctionGraphNode, childrenMap map[*ssa.Function][]node.GraphNode) func(*callgraph.Edge) error {
+func createEdgeVisitor(nodeMap map[*ssa.Function]*node.FunctionTrackedEntity, childrenMap map[*ssa.Function][]node.TrackedEntity) func(*callgraph.Edge) error {
 	return func(edge *callgraph.Edge) error {
 		caller, callee := edge.Caller.Func, edge.Callee.Func
 		ensureNodeExists(nodeMap, caller)
@@ -84,20 +84,20 @@ func createEdgeVisitor(nodeMap map[*ssa.Function]*node.FunctionGraphNode, childr
 	}
 }
 
-func ensureNodeExists(nodeMap map[*ssa.Function]*node.FunctionGraphNode, fn *ssa.Function) {
+func ensureNodeExists(nodeMap map[*ssa.Function]*node.FunctionTrackedEntity, fn *ssa.Function) {
 	if _, exists := nodeMap[fn]; !exists {
-		nodeMap[fn] = &node.FunctionGraphNode{}
+		nodeMap[fn] = &node.FunctionTrackedEntity{}
 	}
 }
 
-func populateNodes(nodeMap map[*ssa.Function]*node.FunctionGraphNode, childrenMap map[*ssa.Function][]node.GraphNode) {
+func populateNodes(nodeMap map[*ssa.Function]*node.FunctionTrackedEntity, childrenMap map[*ssa.Function][]node.TrackedEntity) {
 	for fn, fnNode := range nodeMap {
 		children := childrenMap[fn]
-		*fnNode = *node.NewFunctionGraphNode(fn.String(), children)
+		*fnNode = *node.NewFunctionTrackedEntity(fn.String(), children)
 	}
 }
 
-func addAllPackageFunctions(prog *ssa.Program, pkgs []*packages.Package, nodeMap map[*ssa.Function]*node.FunctionGraphNode, childrenMap map[*ssa.Function][]node.GraphNode) {
+func addAllPackageFunctions(prog *ssa.Program, pkgs []*packages.Package, nodeMap map[*ssa.Function]*node.FunctionTrackedEntity, childrenMap map[*ssa.Function][]node.TrackedEntity) {
 	// Iterate through all SSA packages and their functions
 	for _, ssaPkg := range prog.AllPackages() {
 		// Check if this SSA package corresponds to one of our target packages
@@ -108,10 +108,10 @@ func addAllPackageFunctions(prog *ssa.Program, pkgs []*packages.Package, nodeMap
 					if fn, ok := member.(*ssa.Function); ok {
 						// Only add if not already in nodeMap
 						if _, exists := nodeMap[fn]; !exists {
-							nodeMap[fn] = &node.FunctionGraphNode{}
+							nodeMap[fn] = &node.FunctionTrackedEntity{}
 							// Initialize empty children slice if not exists
 							if _, exists := childrenMap[fn]; !exists {
-								childrenMap[fn] = []node.GraphNode{}
+								childrenMap[fn] = []node.TrackedEntity{}
 							}
 						}
 					}
@@ -176,14 +176,14 @@ func detectSQLStrings(sourceCode string) []string {
 	return sqlStrings
 }
 
-func createDBTableNodesMap(sqlStrings []string) map[string]*node.DatabaseTableGraphNode {
-	tableMap := make(map[string]*node.DatabaseTableGraphNode)
+func createDBTableNodesMap(sqlStrings []string) map[string]*node.DatabaseTableTrackedEntity {
+	tableMap := make(map[string]*node.DatabaseTableTrackedEntity)
 
 	for _, sql := range sqlStrings {
 		tables := extractTablesFromSQL(sql)
 		for _, table := range tables {
 			if _, exists := tableMap[table]; !exists {
-				tableMap[table] = node.NewDatabaseTableGraphNode(table, []node.GraphNode{})
+				tableMap[table] = node.NewDatabaseTableTrackedEntity(table, []node.TrackedEntity{})
 			}
 		}
 	}
@@ -222,7 +222,7 @@ func isSQLString(s string) bool {
 	return false
 }
 
-func establishFunctionTableRelationships(nodeMap map[*ssa.Function]*node.FunctionGraphNode, childrenMap map[*ssa.Function][]node.GraphNode, pkgs []*packages.Package, dbTableMap map[string]*node.DatabaseTableGraphNode) {
+func establishFunctionTableRelationships(nodeMap map[*ssa.Function]*node.FunctionTrackedEntity, childrenMap map[*ssa.Function][]node.TrackedEntity, pkgs []*packages.Package, dbTableMap map[string]*node.DatabaseTableTrackedEntity) {
 	// Map function names to their SSA functions for lookup
 	funcNameToSSA := make(map[string]*ssa.Function)
 	for ssaFunc := range nodeMap {

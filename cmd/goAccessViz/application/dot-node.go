@@ -21,7 +21,7 @@ func (d *dotNode) Getlabel() string {
 	return d.DOTID()
 }
 
-func newDotNode(node node.GraphNode, goNumDotNode graph.Node) *dotNode {
+func newDotNode(node node.TrackedEntity, goNumDotNode graph.Node) *dotNode {
 	return &dotNode{
 		Node:  goNumDotNode,
 		label: node.GetLabel(),
@@ -29,7 +29,7 @@ func newDotNode(node node.GraphNode, goNumDotNode graph.Node) *dotNode {
 }
 
 // ToDo2度同じNodeに達した場合の対応を考える
-func addDomainNodeChildrenToDotGraph(rootNode node.GraphNode, rootDotNode *dotNode, g *simple.DirectedGraph, dotIdToIDMap map[string]*dotNode) {
+func addDomainNodeChildrenToDotGraph(rootNode node.TrackedEntity, rootDotNode *dotNode, g *simple.DirectedGraph, dotIdToIDMap map[string]*dotNode) {
 	for _, child := range rootNode.GetChildren() {
 		label := child.GetLabel()
 
@@ -44,7 +44,7 @@ func addDomainNodeChildrenToDotGraph(rootNode node.GraphNode, rootDotNode *dotNo
 	}
 }
 
-func NewDotGraph(rootNodes []node.GraphNode) *simple.DirectedGraph {
+func NewDotGraph(rootNodes []node.TrackedEntity) *simple.DirectedGraph {
 	g := simple.NewDirectedGraph()
 
 	dotIdToDotNodeMap := make(map[string]*dotNode)

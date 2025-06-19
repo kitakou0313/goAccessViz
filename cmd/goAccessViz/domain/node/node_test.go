@@ -4,13 +4,13 @@ import (
 	"testing"
 )
 
-var testChildren = []GraphNode{
-	NewFunctionGraphNode("testFunction1", []GraphNode{}),
-	NewFunctionGraphNode("testFunction2", []GraphNode{}),
+var testChildren = []TrackedEntity{
+	NewFunctionTrackedEntity("testFunction1", []TrackedEntity{}),
+	NewFunctionTrackedEntity("testFunction2", []TrackedEntity{}),
 }
 
 func TestFunctionNodeGetChildren(t *testing.T) {
-	nodeInstance := NewFunctionGraphNode("doTestFunction", testChildren)
+	nodeInstance := NewFunctionTrackedEntity("doTestFunction", testChildren)
 	actual := nodeInstance.GetChildren()
 
 	expected := testChildren
@@ -29,7 +29,7 @@ func TestFunctionNodeGetChildren(t *testing.T) {
 
 func TestNetFunctionNode(t *testing.T) {
 	expectedName := "testFunction"
-	functionNode := NewFunctionGraphNode(expectedName, testChildren)
+	functionNode := NewFunctionTrackedEntity(expectedName, testChildren)
 	if functionNode.GetLabel() != "testFunction" {
 		t.Errorf("Expected function name '%s', but got '%s'", expectedName, functionNode.funtionName)
 	}
@@ -39,7 +39,7 @@ func TestNetFunctionNode(t *testing.T) {
 func TestDBTableNode(t *testing.T) {
 	expectedName := "test-table"
 
-	dbtableNode := NewDatabaseTableGraphNode(expectedName, testChildren)
+	dbtableNode := NewDatabaseTableTrackedEntity(expectedName, testChildren)
 
 	if dbtableNode.GetLabel() != expectedName {
 		t.Errorf("Expected table name '%s', but got '%s'", expectedName, dbtableNode.tableName)
@@ -53,7 +53,7 @@ func TestDBTableNode(t *testing.T) {
 }
 
 func TestDBTableNodeGetChildren(t *testing.T) {
-	dbTableNode := NewDatabaseTableGraphNode("test-table", testChildren)
+	dbTableNode := NewDatabaseTableTrackedEntity("test-table", testChildren)
 	actual := dbTableNode.GetChildren()
 
 	expected := testChildren

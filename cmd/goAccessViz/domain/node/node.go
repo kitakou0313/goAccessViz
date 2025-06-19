@@ -1,6 +1,6 @@
 package node
 
-type GraphNode interface {
-	GetChildren() []GraphNode
+type TrackedEntity interface {
+	GetChildren() []TrackedEntity
 	GetLabel() string
 }
