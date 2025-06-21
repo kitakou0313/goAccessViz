@@ -249,11 +249,15 @@ func establishFunctionTableRelationships(nodeMap map[*ssa.Function]*node.Functio
 					}
 
 					if targetSSAFunc != nil {
-						// Find SQL strings within this function
+						// Find SQL strings within this function (both direct strings and sqlx function calls)
 						sqlStringsInFunc := findSQLStringsInFunction(funcDecl)
+						sqlxStringsInFunc := findSQLXCallsInFunction(funcDecl)
+
+						// Combine both sources of SQL strings
+						allSQLStrings := append(sqlStringsInFunc, sqlxStringsInFunc...)
 
 						// For each SQL string, find referenced tables and add them as children
-						for _, sqlStr := range sqlStringsInFunc {
+						for _, sqlStr := range allSQLStrings {
 							tables := extractTablesFromSQL(sqlStr)
 							for _, tableName := range tables {
 								if dbTableNode, exists := dbTableMap[tableName]; exists {
@@ -286,4 +290,56 @@ func findSQLStringsInFunction(funcDecl *ast.FuncDecl) []string {
 	}
 
 	return sqlStrings
+}
+
+func findSQLXCallsInFunction(funcDecl *ast.FuncDecl) []string {
+	var sqlStrings []string
+	if funcDecl.Body != nil {
+		ast.Inspect(funcDecl.Body, func(n ast.Node) bool {
+			if callExpr, ok := n.(*ast.CallExpr); ok {
+				sqlStrings = append(sqlStrings, extractSQLFromCall(callExpr)...)
+			}
+			return true
+		})
+	}
+	return sqlStrings
+}
+
+func extractSQLFromCall(callExpr *ast.CallExpr) []string {
+	if selExpr, ok := callExpr.Fun.(*ast.SelectorExpr); ok {
+		if isSQLXMethod(selExpr.Sel.Name) {
+			return getSQLFromArgs(callExpr.Args, selExpr.Sel.Name)
+		}
+	}
+	return []string{}
+}
+
+func isSQLXMethod(methodName string) bool {
+	methods := []string{"Get", "Select", "Exec", "Query", "QueryRow", "Queryx", "QueryRowx"}
+	for _, method := range methods {
+		if methodName == method {
+			return true
+		}
+	}
+	return false
+}
+
+func getSQLFromArgs(args []ast.Expr, methodName string) []string {
+	sqlIndex := getSQLArgumentIndex(methodName)
+	if sqlIndex < len(args) {
+		if lit, ok := args[sqlIndex].(*ast.BasicLit); ok && lit.Kind.String() == "STRING" {
+			value := strings.Trim(lit.Value, `"'`+"`")
+			if isSQLString(value) {
+				return []string{value}
+			}
+		}
+	}
+	return []string{}
+}
+
+func getSQLArgumentIndex(methodName string) int {
+	if methodName == "Get" || methodName == "Select" {
+		return 1
+	}
+	return 0
 }
